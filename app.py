@@ -58,7 +58,7 @@ user_chat = st.text_input("أدخل رسالتك للدردشة:")
 if st.button("أرسل"):
     with st.spinner("جارٍ التفكير..."):
         inputs = tokenizer_text(user_chat, return_tensors="pt")
-        # محاكاة رد ذكي (يمكن تحسينه بنموذج محادثة)
+        # محاكاة رد ذكيت (يمكن تحسينه بنموذج محادثة)
         response = "أنا أفهمك! هل يمكنني مساعدتك في شيء آخر؟"
         st.write(f"**الرد**: {response}")
 
