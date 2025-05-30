@@ -10,7 +10,7 @@ import socket
 # تحميل النماذج الجاهزة
 tokenizer_chat = AutoTokenizer.from_pretrained("facebook/blenderbot-400M-distill")
 model_chat = AutoModelForCausalLM.from_pretrained("facebook/blenderbot-400M-distill")
-processor_image = CLIPProcessor.from_pretrained("openai/clip-vit-base-patch32")
+processor = CLIPProcessor.from_pretrained("openai/clip-vit-base-patch32", use_fast=True)
 model_image = CLIPModel.from_pretrained("openai/clip-vit-base-patch32")
 
 # إعداد Proxy لتقليل الكشف
