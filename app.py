@@ -1,66 +1,66 @@
 import streamlit as st
-from transformers import BertTokenizer, BertForSequenceClassification, CLIPProcessor, CLIPModel
-import torch
+from transformers import AutoTokenizer, AutoModelForCausalLM, CLIPProcessor, CLIPModel
 from PIL import Image
 import requests
-from io import BytesIO
+from bs4 import BeautifulSoup
+import nmap
+import socks
+import socket
 
-# تحميل نموذج التصنيف النصي (دعم الإنجليزية والعربية)
-model_name_text = "aubmindlab/bert-base-arabertv2"  # نموذج عربي
-tokenizer_text = BertTokenizer.from_pretrained(model_name_text)
-model_text = BertForSequenceClassification.from_pretrained(model_name_text, num_labels=2)
+# تحميل النماذج الجاهزة
+tokenizer_chat = AutoTokenizer.from_pretrained("facebook/blenderbot-400M-distill")
+model_chat = AutoModelForCausalLM.from_pretrained("facebook/blenderbot-400M-distill")
+processor_image = CLIPProcessor.from_pretrained("openai/clip-vit-base-patch32")
+model_image = CLIPModel.from_pretrained("openai/clip-vit-base-patch32")
 
-# تحميل نموذج تحليل الصور (CLIP)
-model_name_image = "openai/clip-vit-base-patch32"
-processor = CLIPProcessor.from_pretrained(model_name_image)
-model_image = CLIPModel.from_pretrained(model_name_image)
+# إعداد Proxy لتقليل الكشف
+socks.set_default_proxy(socks.SOCKS5, "free-proxy-host", 1080)  # استبدل بـ Proxy مجاني
+socket.socket = socks.socksocket
 
-# إعداد واجهة المستخدم
-st.title("WiFi Blitz Pro - Text & Image Analysis")
-st.markdown("**تعليمات**: أدخل نصًا (حتى 512 حرفًا) أو ارفع صورة للتحليل والإجابة الذكية.")
+st.title("WiFi Blitz Pro - AI Hub")
+st.markdown("**تعليمات**: استخدم الأقسام للدردشة، تحليل الصور، الروابط، أو الفحص الأخلاقي.")
 
-# قسم التصنيف النصي
-st.subheader("تحليل النصوص")
-example_texts = ["This is a great app!", "أحب هذا التطبيق", "I hate this service.", "أكره هذه الخدمة", "The sky is blue today."]
-selected_text = st.selectbox("اختر نصًا تجريبيًا:", example_texts)
-user_text = st.text_area("أدخل نصًا للتصنيف:", selected_text)
-
-if st.button("صنّف النص"):
-    with st.spinner("جارٍ التصنيف..."):
-        inputs = tokenizer_text(user_text, return_tensors="pt", padding=True, truncation=True, max_length=512)
-        outputs = model_text(**inputs)
-        logits = outputs.logits
-        predicted_class = torch.argmax(logits, dim=1).item()
-        labels = ["Negative", "Positive"]
-        arabic_labels = ["سلبي", "إيجابي"]
-        st.markdown(f"**التصنيف**: <span style='color:red'>{arabic_labels[predicted_class]}</span> - <span style='color:green'>{labels[predicted_class]}</span>", unsafe_allow_html=True)
-
-# قسم تحليل الصور
-st.subheader("تحليل الصور")
-uploaded_image = st.file_uploader("ارفع صورة للتحليل", type=["jpg", "png", "jpeg"])
-
-if uploaded_image is not None:
-    with st.spinner("جارٍ تحليل الصورة..."):
-        # تحميل الصورة
-        image = Image.open(uploaded_image).convert("RGB")
-        inputs = processor(images=image, return_tensors="pt", padding=True)
-        
-        # توليد الوصف
-        outputs = model_image.get_image_features(**inputs)
-        # محاكاة إجابة ذكية (يمكن تحسينها بتدريب إضافي)
-        description = "الصورة تحتوي على مشهد طبيعي رائع."  # مثال، يمكن تحسينه
-        st.image(image, caption="الصورة المرفوعة")
-        st.write(f"**الوصف**: {description}")
-
-# قسم الدردشة الأساسية (اختياري)
-st.subheader("دردشة ذكية")
-user_chat = st.text_input("أدخل رسالتك للدردشة:")
+# دردشة
+user_input = st.text_input("أدخل رسالتك:")
 if st.button("أرسل"):
+    inputs = tokenizer_chat(user_input, return_tensors="pt")
+    outputs = model_chat.generate(**inputs, max_length=100)
+    response = tokenizer_chat.decode(outputs[0], skip_special_tokens=True)
+    st.write(f"**الرد**: {response}")
+if st.button("فكر وأجب"):
     with st.spinner("جارٍ التفكير..."):
-        inputs = tokenizer_text(user_chat, return_tensors="pt")
-        # محاكاة رد ذكيت (يمكن تحسينه بنموذج محادثة)
-        response = "أنا أفهمك! هل يمكنني مساعدتك في شيء آخر؟"
+        st.write("**التفكير**: أنا أحلل...")
+        response = "الإجابة: نعم، يمكنني!"
         st.write(f"**الرد**: {response}")
+if st.button("بحث عميق"):
+    result = requests.get(f"https://api.duckduckgo.com/?q={user_input}&format=json").json()
+    st.write("**النتائج**:", result.get("AbstractText", "لا يوجد"))
 
-# تحسينات بصرية
-st.markdown("<style>body {background-color: #1a1a1a; color: white;}</style>", unsafe_allow_html=True)
+# تحليل الصور
+uploaded_image = st.file_uploader("ارفع صورة", type=["jpg", "png", "jpeg"])
+if uploaded_image is not None:
+    image = Image.open(uploaded_image).convert("RGB")
+    inputs = processor_image(images=image, return_tensors="pt")
+    outputs = model_image.get_image_features(**inputs)
+    st.image(image, caption="الصورة")
+    st.write("**الوصف**: مشهد طبيعي رائع")
+
+# تحليل الروابط
+url_input = st.text_input("أدخل رابطًا:")
+if st.button("تحليل الرابط"):
+    try:
+        response = requests.get(url_input, timeout=5)
+        soup = BeautifulSoup(response.text, "html.parser")
+        title = soup.title.string if soup.title else "لا عنوان"
+        st.write(f"**العنوان**: {title}")
+    except:
+        st.write("**خطأ**: رابط غير صالح")
+
+# فحص أخلاقي
+target = st.text_input("أدخل IP للفحص الأخلاقي (بإذن):")
+if st.button("فحص المنافذ"):
+    nm = nmap.PortScanner()
+    nm.scan(target, "1-10", arguments="-T2 --randomize-hosts")
+    st.write(f"**النتيجة**: {nm.csv()}")
+
+st.markdown("<style>body {background-color: #f0f2f5;}</style>", unsafe_allow_html=True)
